@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            // A coluna 'role' foi removida daqui, pois a gestão de roles será feita via 'role_user'
             $table->rememberToken();
             $table->timestamps();
         });
