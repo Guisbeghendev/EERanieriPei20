@@ -2,47 +2,70 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use App\Models\Traits\HasRoles;
+// Importe o modelo Avatar
+use App\Models\Avatar;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasRoles;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
         'password',
+        // 'email_verified_at', // CORRIGIDO: Removido do $fillable conforme a discussão
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+    ];
+
     /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
+     * Get the profile associated with the user.
      */
-    protected function casts(): array
+    public function profile(): HasOne
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return $this->hasOne(Profile::class);
     }
+
+    /**
+     * Get the groups the user belongs to.
+     */
+    public function groups(): BelongsToMany
+    {
+        // Simplificado: o Laravel infere 'group_user', 'user_id', 'group_id'
+        return $this->belongsToMany(Group::class);
+    }
+
+    /**
+     * Get the galleries owned by the user.
+     */
+    public function galleries(): HasMany
+    {
+        return $this->hasMany(Gallery::class, 'user_id');
+    }
+
+    /**
+     * Get the avatar associated with the user.
+     * Este é o relacionamento que liga o User ao seu Avatar.
+     */
+    public function avatar(): HasOne
+    {
+        return $this->hasOne(Avatar::class);
+    }
+
+    // O relacionamento 'roles()' é fornecido pelo trait HasRoles.
 }
