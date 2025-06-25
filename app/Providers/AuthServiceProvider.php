@@ -3,24 +3,24 @@
 namespace App\Providers;
 
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
-use Illuminate\Support\Facades\Gate;
-use App\Models\User;
-use App\Models\Profile;
-use App\Models\Group;
-use App\Models\Gallery;
-use App\Models\Image;
+use Illuminate\Support\Facades\Gate; // Importa a fachada Gate para definir e verificar Gates
+use App\Models\User;                // Modelo de usuário
+use App\Models\Profile;             // Modelo de perfil
+use App\Models\Group;               // Modelo de grupo
+use App\Models\Gallery;             // Modelo de galeria
+use App\Models\Image;               // Modelo de imagem
 
-use App\Policies\UserPolicy;
-use App\Policies\ProfilePolicy;
-use App\Policies\GroupPolicy;
-use App\Policies\GalleryPolicy;
-use App\Policies\ImagePolicy;
+use App\Policies\UserPolicy;        // Policy para o modelo User
+use App\Policies\ProfilePolicy;     // Policy para o modelo Profile
+use App\Policies\GroupPolicy;       // Policy para o modelo Group
+use App\Policies\GalleryPolicy;     // Policy para o modelo Gallery
+use App\Policies\ImagePolicy;       // Policy para o modelo Image
 
 class AuthServiceProvider extends ServiceProvider
 {
     /**
-     * Os mapeamentos de políticas para a aplicação.
-     * Associa um modelo à sua respectiva Policy.
+     * O mapeamento das Policies para os modelos da aplicação.
+     * Define qual classe Policy será usada para autorizar ações em um determinado modelo.
      *
      * @var array<class-string, class-string>
      */
@@ -34,203 +34,161 @@ class AuthServiceProvider extends ServiceProvider
 
     /**
      * Registra quaisquer serviços de autenticação / autorização.
-     *
-     * @return void
+     * Este método é onde você define suas Gates personalizadas.
      */
     public function boot(): void
     {
-        // Registra as políticas definidas no array $policies.
-        $this->registerPolicies();
+        $this->registerPolicies(); // Registra as policies definidas no array $policies.
 
-        // --- Variáveis de suporte para Gates (otimização) ---
-        // Carrega o ID do grupo 'free' uma única vez para uso nas Gates, evitando consultas repetidas.
-        $freeGroupId = null;
-        $freeGroup = Group::where('name', 'free')->first();
-        if ($freeGroup) {
-            $freeGroupId = $freeGroup->id;
-        }
-
-        // --- Gates úteis para o projeto: ---
+        // --- Definição de Gates úteis para o projeto: ---
 
         /**
-         * Gate: 'admin-only'
-         * Permite acesso apenas a usuários com a role 'admin'.
-         * Usada para funcionalidades administrativas gerais.
+         * Gate 'admin-only': Permite acesso somente a usuários com o papel 'admin'.
+         * Convenção para funções administrativas gerais.
          */
         Gate::define('admin-only', function (User $user) {
-            return $user->hasRole('admin');
+            return $user->hasRole('admin'); // Assume que o modelo User tem um método hasRole() (ex: via Spatie)
         });
 
         /**
-         * Gate: 'fotografo-only'
-         * Permite acesso apenas a usuários com a role 'fotografo'.
-         * Usada para funcionalidades de gerenciamento de conteúdo por fotógrafos.
+         * Gate 'fotografo-only': Permite acesso somente a usuários com o papel 'fotografo'.
+         * Convenção para funções de gerenciamento de conteúdo por fotógrafos.
          */
         Gate::define('fotografo-only', function (User $user) {
             return $user->hasRole('fotografo');
         });
 
         /**
-         * Gate: 'edit-profile'
-         * Permite que um usuário edite seu próprio perfil ou que um admin edite qualquer perfil.
+         * Gate 'edit-profile': Permite que um usuário edite seu próprio perfil,
+         * ou que um administrador edite qualquer perfil.
          *
-         * @param \App\Models\User $user O usuário autenticado.
-         * @param \App\Models\Profile|null $profile O perfil a ser editado (opcional, para casos onde o perfil não é conhecido).
-         * @return bool
+         * @param User $user O usuário autenticado.
+         * @param Profile|null $profile O perfil que está sendo editado (pode ser nulo se for a tela de edição do próprio perfil sem um ID explícito).
          */
         Gate::define('edit-profile', function (User $user, ?Profile $profile = null) {
             if ($profile) {
-                // Admin pode editar qualquer perfil. Usuário pode editar o próprio.
+                // Se um perfil específico for fornecido: Admin pode editar qualquer perfil,
+                // e um usuário pode editar o perfil que ele mesmo possui.
                 return $user->hasRole('admin') || $user->id === $profile->user_id;
             }
-            // Se nenhum perfil específico for passado (ex: para a tela de edição do próprio perfil do usuário logado),
-            // permite, pois o usuário sempre pode tentar editar seu próprio perfil.
+            // Se nenhum perfil específico for passado (ex: acessando a tela de 'meu perfil' sem um ID de perfil),
+            // a permissão é concedida, pois o usuário estaria editando o próprio perfil implicitamente.
             return true;
         });
 
         /**
-         * Gate: 'access-group'
-         * Permite que um usuário acesse um grupo específico ou a funcionalidade de grupos em geral.
+         * Gate 'access-group': Permite que um usuário acesse um grupo se ele for membro do grupo
+         * ou se for um administrador.
          *
-         * @param \App\Models\User $user O usuário autenticado.
-         * @param \App\Models\Group|null $group O grupo a ser acessado (opcional).
-         * @return bool
+         * @param User $user O usuário autenticado.
+         * @param Group|null $group O grupo que está sendo acessado (pode ser nulo em contextos de listagem).
          */
         Gate::define('access-group', function (User $user, ?Group $group = null) {
-            // Se não há usuário logado, não pode acessar grupo (grupos são para usuários autenticados).
-            if (!$user) {
-                return false;
-            }
             if ($group) {
-                // Admin pode acessar qualquer grupo. Usuário pode acessar grupos a que pertence.
-                if (!$user->relationLoaded('groups')) {
-                    $user->load('groups');
-                }
+                // Admin pode acessar qualquer grupo. Usuário comum só pode acessar grupos a que pertence.
+                // Carrega a relação 'groups' do usuário se ainda não estiver carregada para evitar N+1 queries.
+                if (!$user->relationLoaded('groups')) { $user->load('groups'); }
                 return $user->hasRole('admin') || $user->groups->contains($group->id);
             }
-            // Se nenhum grupo for passado (ex: acesso a uma interface geral de listagem/gerenciamento de grupos),
-            // permite apenas para administradores, para ser mais restritivo por padrão.
+            // Se nenhum grupo for passado (ex: contexto de listagem de grupos),
+            // a Gate permite se o usuário for admin. A Policy 'viewAny' pode lidar com casos de não-admin.
             return $user->hasRole('admin');
         });
 
         /**
-         * Gate: 'create-gallery'
-         * Permite que um usuário crie uma nova galeria.
-         *
-         * @param \App\Models\User $user O usuário autenticado.
-         * @return bool
+         * Gate 'create-gallery': Permite que um usuário crie uma nova galeria se ele tiver o papel 'fotografo'.
+         * Usa uma função de seta curta (Arrow Function).
          */
         Gate::define('create-gallery', fn(User $user) =>
-            // Apenas usuários logados que são fotógrafos podem criar galerias.
-            $user && $user->hasRole('fotografo')
+        $user->hasRole('fotografo')
         );
 
         /**
-         * Gate: 'manage-gallery'
-         * Permite que um usuário gerencie (upload de imagens, etc.) uma galeria específica.
+         * Gate 'manage-gallery': Permite que um usuário gerencie uma galeria (upload de imagens,
+         * edição de detalhes da galeria, etc.) se ele for 'fotografo' E o dono da galeria.
          *
-         * @param \App\Models\User $user O usuário autenticado.
-         * @param \App\Models\Gallery|null $gallery A galeria a ser gerenciada (opcional).
-         * @return bool
+         * @param User $user O usuário autenticado.
+         * @param Gallery|null $gallery A instância da galeria a ser gerenciada.
          */
         Gate::define('manage-gallery', function (User $user, ?Gallery $gallery = null) {
-            // Se não há usuário logado, não pode gerenciar galeria.
-            if (!$user) {
-                return false;
-            }
             if ($gallery) {
-                // Fotógrafos gerenciam suas próprias galerias.
+                // Fotógrafos podem gerenciar suas próprias galerias.
                 return $user->hasRole('fotografo') && $user->id === $gallery->user_id;
             }
-            // Se nenhum modelo de galeria for passado (ex: acesso a uma interface geral de gerenciamento),
-            // permite apenas para fotógrafos.
+            // Se nenhum modelo de galeria for passado (ex: acesso a uma interface geral
+            // de gerenciamento de galerias, antes de selecionar uma específica),
+            // a permissão é concedida se o usuário for fotógrafo.
             return $user->hasRole('fotografo');
         });
 
         /**
-         * GATE: 'view-gallery'
-         * Controla o acesso de visualização a GALERIAS INDIVIDUAIS.
-         * Esta Gate é complexa e lida com acesso público (guests) e autenticado.
+         * Gate 'view-public-gallery': Lida com o acesso de guests e usuários autenticados
+         * à visualização de galerias individuais, considerando se a galeria é pública ou restrita a grupos.
          *
-         * @param \App\Models\User|null $user O usuário autenticado ou null se for guest.
-         * @param \App\Models\Gallery $gallery A galeria a ser visualizada.
-         * @return bool
+         * @param User|null $user O usuário autenticado (pode ser nulo para guests).
+         * @param Gallery $gallery A instância da galeria a ser visualizada.
          */
-        Gate::define('view-gallery', function (?User $user, Gallery $gallery) use ($freeGroupId) {
-            // Garante que as relações 'groups' estejam carregadas para a galeria
-            if (!$gallery->relationLoaded('groups')) {
-                $gallery->load('groups');
+        Gate::define('view-public-gallery', function (?User $user, Gallery $gallery) {
+            // Carrega a relação 'groups' da galeria se ainda não estiver carregada.
+            if (!$gallery->relationLoaded('groups')) { $gallery->load('groups'); }
+
+            // Tenta encontrar o grupo 'público' para verificar se a galeria está associada a ele.
+            $publicGroup = Group::where('name', 'público')->first();
+            $publicGroupId = $publicGroup ? $publicGroup->id : null;
+
+            // Condição 1: A galeria é pública (associada ao grupo 'público').
+            if ($publicGroupId && $gallery->groups->contains($publicGroupId)) {
+                return true; // Se for pública, qualquer um (inclusive guests) pode ver.
             }
 
-            // Condição 1: A galeria é "pública" (associada ao grupo 'free').
-            // Se a galeria está associada ao grupo 'free', qualquer um (guest ou logado) pode vê-la.
-            if ($freeGroupId && $gallery->groups->contains($freeGroupId)) {
-                return true;
-            }
-
-            // Se a galeria NÃO é pública E não há usuário logado, nega o acesso.
-            // Esta checagem vem DEPOIS da checagem de público.
+            // Se não é pública, o usuário DEVE estar autenticado para ter qualquer chance de acessar.
             if (!$user) {
-                return false;
+                return false; // Se não estiver autenticado e não for pública, nega o acesso.
             }
 
-            // A partir daqui, o usuário está AUTENTICADO.
+            // Garante que as relações 'groups' estejam carregadas para o usuário (se autenticado).
+            if (!$user->relationLoaded('groups')) { $user->load('groups'); }
 
-            // Garante que as relações 'groups' estejam carregadas para o usuário autenticado.
-            if (!$user->relationLoaded('groups')) {
-                $user->load('groups');
-            }
-
-            // Condição 2: Usuário logado é fotógrafo (pode ver qualquer galeria para fins de gerenciamento e acesso amplo).
+            // Condição 2: O usuário é um 'fotografo' (pode ver qualquer galeria para fins de gerenciamento).
             if ($user->hasRole('fotografo')) {
                 return true;
             }
 
-            // Condição 3: Usuário logado é o dono da galeria.
+            // Condição 3: O usuário é o dono da galeria (criador).
             if ($gallery->user_id === $user->id) {
                 return true;
             }
 
-            // Condição 4: Usuário logado pertence a qualquer um dos grupos da galeria (excluindo 'free', já tratado acima).
-            $userGroupIds = $user->groups->pluck('id')->toArray();
-            $galleryGroupIds = $gallery->groups->pluck('id')->toArray();
+            // Condição 4: O usuário pertence a qualquer um dos grupos aos quais a galeria está associada.
+            $userGroupIds = $user->groups->pluck('id')->toArray();      // IDs dos grupos do usuário.
+            $galleryGroupIds = $gallery->groups->pluck('id')->toArray(); // IDs dos grupos da galeria.
 
-            return (bool) array_intersect($userGroupIds, $galleryGroupIds);
+            // Verifica se há interseção entre os grupos do usuário e os grupos da galeria.
+            if (array_intersect($userGroupIds, $galleryGroupIds)) {
+                return true;
+            }
+
+            // Se nenhuma das condições acima for satisfeita, o acesso é negado.
+            return false;
         });
 
         /**
-         * Gate: 'manage-image'
-         * Permite que um usuário gerencie (criar, atualizar, deletar) imagens em uma galeria.
+         * Gate 'manage-image': Permite que um usuário gerencie uma imagem (criar, atualizar, deletar)
+         * se ele for 'fotografo' E o dono da galeria à qual a imagem pertence.
          *
-         * @param \App\Models\User $user O usuário autenticado.
-         * @param \App\Models\Image|null $image A imagem a ser gerenciada (opcional, para ações que exigem uma imagem específica).
-         * @param \App\Models\Gallery|null $gallery A galeria à qual a imagem pertence (opcional, para criação).
-         * @return bool
+         * @param User $user O usuário autenticado.
+         * @param Image|null $image A instância da imagem a ser gerenciada (pode ser nulo para ações como 'create').
          */
-        Gate::define('manage-image', function (User $user, ?Image $image = null, ?Gallery $gallery = null) {
-            // Se não há usuário logado, não pode gerenciar imagem.
-            if (!$user) {
-                return false;
-            }
-
-            // Para operações que envolvem uma imagem específica (update, delete)
+        Gate::define('manage-image', function (User $user, ?Image $image = null) {
             if ($image) {
-                $parentGallery = $image->gallery; // Carrega a galeria associada à imagem
-                if (!$parentGallery) return false; // Se a galeria não existe, nega o acesso.
-                // Fotógrafos gerenciam imagens em suas próprias galerias.
-                return $user->hasRole('fotografo') && $user->id === $parentGallery->user_id;
-            }
-
-            // Para operações de criação de imagem, a galeria pai deve ser fornecida via segundo argumento
-            // ou assumida de algum contexto (ex: rota /galleries/{gallery}/images/create).
-            // Se a galeria é fornecida via $gallery (para criação), usa ela.
-            if ($gallery) {
+                // Se uma imagem específica for fornecida, obtém a galeria associada.
+                $gallery = $image->gallery;
+                if (!$gallery) return false; // Se a galeria não existe, nega.
+                // Fotógrafos gerenciam imagens que pertencem às suas próprias galerias.
                 return $user->hasRole('fotografo') && $user->id === $gallery->user_id;
             }
-
-            // Se nenhum modelo específico (imagem ou galeria) for passado,
-            // e a Gate for usada para verificar permissão geral de "gerenciar imagens",
-            // permite apenas se o usuário for fotógrafo.
+            // Se nenhum modelo de imagem for passado (ex: para acessar uma interface geral de upload de imagens),
+            // a permissão é concedida se o usuário for fotógrafo.
             return $user->hasRole('fotografo');
         });
     }
