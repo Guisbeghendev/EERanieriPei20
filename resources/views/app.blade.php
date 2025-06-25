@@ -11,8 +11,10 @@
     <title inertia>{{ config('app.name', 'Laravel') }}</title>
 
     <!-- Fontes padrão do Laravel/Breeze, Figtree -->
-    <link rel="preconnect" href="[https://fonts.bunny.net](https://fonts.bunny.net)">
-    <link href="[https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap](https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap)" rel="stylesheet" />
+    <!-- CORREÇÃO: Removidos os colchetes e parênteses da URL do preconnect -->
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <!-- CORREÇÃO: Removidos os colchetes e parênteses da URL do stylesheet da fonte -->
+    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
     <!-- Scripts da aplicação Vite, incluindo app.js e a página Vue atual -->
     @vite(['resources/js/app.js', "resources/js/Pages/{$page['component']}.vue"])

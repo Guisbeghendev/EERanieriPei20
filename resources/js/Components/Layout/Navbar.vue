@@ -42,9 +42,10 @@
                                 class="w-12 h-12 rounded-full object-cover shadow-md ring-2 ring-prata1 ring-offset-2 ring-offset-laranja2 group-hover:scale-105 transition-transform duration-200"
                                 @click.stop="toggleDropdown"
                             />
+                            <!-- A URL do Gravatar está correta, sem colchetes -->
                             <img
                                 v-else
-                                src="[https://www.gravatar.com/avatar/?d=mp&f=y](https://www.gravatar.com/avatar/?d=mp&f=y)"
+                                src="https://www.gravatar.com/avatar/?d=mp&f=y"
                                 alt="Avatar padrão"
                                 class="w-12 h-12 rounded-full object-cover shadow-md ring-2 ring-prata1 ring-offset-2 ring-offset-laranja2 group-hover:scale-105 transition-transform duration-200"
                                 @click.stop="toggleDropdown"
@@ -58,7 +59,8 @@
                             <div v-if="dropdownOpen" class="absolute right-0 mt-16 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-xl z-50 transform opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 ease-out origin-top-right">
                                 <ul class="py-2 text-base text-gray-700 dark:text-gray-200">
                                     <li>
-                                        <Link :href="dashboardRoute" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:text-white transition-colors duration-200">
+                                        <!-- O link do Dashboard no dropdown agora sempre aponta para /dashboard -->
+                                        <Link href="/dashboard" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:text-white transition-colors duration-200">
                                             Dashboard
                                         </Link>
                                     </li>
@@ -96,7 +98,8 @@
                     </li>
                     <!-- Link para o Dashboard, visível apenas para usuários autenticados -->
                     <li v-if="$page.props.auth?.user">
-                        <Link :href="dashboardRoute" class="inline-block py-2 px-5 rounded-full text-prata1 hover:bg-laranja2 md:hover:text-prata1 dark:hover:text-blue-500 transition-all duration-300 ease-in-out">
+                        <!-- O link do Dashboard no menu inferior agora sempre aponta para /dashboard -->
+                        <Link href="/dashboard" class="inline-block py-2 px-5 rounded-full text-prata1 hover:bg-laranja2 md:hover:text-prata1 dark:hover:text-blue-500 transition-all duration-300 ease-in-out">
                             Dashboard
                         </Link>
                     </li>
@@ -142,8 +145,8 @@
                     aria-controls="navbar-default"
                     :aria-expanded="menuOpen.toString()">
                     <span class="sr-only">Open main menu</span>
-                    <svg v-if="!menuOpen" class="w-8 h-8" xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-                    <svg v-else class="w-8 h-8" xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    <svg v-if="!menuOpen" class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                    <svg v-else class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
         </nav>
@@ -161,18 +164,9 @@ const dropdownRef = ref(null);
 const page = usePage();
 
 const dashboardRoute = computed(() => {
-    const user = page.props.auth?.user;
-    // Note: Certifique-se de que o backend esteja enviando os papéis do usuário
-    // na prop $page.props.auth.user.roles.
-    if (user && user.roles) {
-        if (user.roles.some(role => role.name === 'admin')) {
-            return '/admin/dashboard';
-        }
-        if (user.roles.some(role => role.name === 'fotografo')) {
-            return '/fotografo/dashboard';
-        }
-    }
-    return '/dashboard'; // Rota padrão se não for admin nem fotografo, ou se os roles não existirem
+    // CORREÇÃO: Agora, o link do dashboard na Navbar sempre leva para o dashboard geral (/dashboard).
+    // A navegação para dashboards específicos (admin/fotografo) deve ocorrer a partir do dashboard geral.
+    return '/dashboard';
 });
 
 const toggleDropdown = () => {
