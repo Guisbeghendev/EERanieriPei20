@@ -27,7 +27,7 @@
                             Login
                         </Link>
                         <Link href="/register" class="inline-block px-5 py-2 text-lg text-black bg-transparent rounded-full hover:bg-roxo1 hover:text-prata1 dark:text-blue-500 transition-all duration-300 ease-in-out font-semibold">
-                            Register
+                            Cadastro
                         </Link>
                     </template>
 
@@ -38,14 +38,14 @@
                             <img
                                 v-if="$page.props.auth?.user.avatar?.url"
                                 :src="$page.props.auth?.user.avatar.url"
-                                alt="Avatar do Usuário"
+                                alt="Avatar"
                                 class="w-12 h-12 rounded-full object-cover shadow-md ring-2 ring-prata1 ring-offset-2 ring-offset-laranja2 group-hover:scale-105 transition-transform duration-200"
                                 @click.stop="toggleDropdown"
                             />
                             <img
                                 v-else
                                 src="[https://www.gravatar.com/avatar/?d=mp&f=y](https://www.gravatar.com/avatar/?d=mp&f=y)"
-                                alt="Avatar Padrão"
+                                alt="Avatar padrão"
                                 class="w-12 h-12 rounded-full object-cover shadow-md ring-2 ring-prata1 ring-offset-2 ring-offset-laranja2 group-hover:scale-105 transition-transform duration-200"
                                 @click.stop="toggleDropdown"
                             />
@@ -58,19 +58,19 @@
                             <div v-if="dropdownOpen" class="absolute right-0 mt-16 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-xl z-50 transform opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 ease-out origin-top-right">
                                 <ul class="py-2 text-base text-gray-700 dark:text-gray-200">
                                     <li>
-                                        <Link href="/profile" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:text-white transition-colors duration-200">
-                                            Perfil
-                                        </Link>
-                                    </li>
-                                    <li>
                                         <Link :href="dashboardRoute" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:text-white transition-colors duration-200">
                                             Dashboard
                                         </Link>
                                     </li>
                                     <li>
+                                        <Link href="/profile" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:text-white transition-colors duration-200">
+                                            Perfil
+                                        </Link>
+                                    </li>
+                                    <li>
                                         <!-- Botão de Logout que envia uma requisição POST para a rota /logout -->
                                         <button @click="$inertia.post('/logout')" class="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:text-white transition-colors duration-200">
-                                            Logout
+                                            Sair
                                         </button>
                                     </li>
                                 </ul>
@@ -106,13 +106,13 @@
                         </Link>
                     </li>
                     <li>
-                        <Link href="/coral-ranieri" class="inline-block py-2 px-5 rounded-full text-prata1 hover:bg-laranja2 md:hover:text-prata1 dark:hover:text-blue-500 transition-all duration-300 ease-in-out">
-                            Coral Ranieri
+                        <Link href="/gremio" class="inline-block py-2 px-5 rounded-full text-prata1 hover:bg-laranja2 md:hover:text-prata1 dark:hover:text-blue-500 transition-all duration-300 ease-in-out">
+                            Grêmio
                         </Link>
                     </li>
                     <li>
-                        <Link href="/gremio" class="inline-block py-2 px-5 rounded-full text-prata1 hover:bg-laranja2 md:hover:text-prata1 dark:hover:text-blue-500 transition-all duration-300 ease-in-out">
-                            Grêmio
+                        <Link href="/coral-ranieri" class="inline-block py-2 px-5 rounded-full text-prata1 hover:bg-laranja2 md:hover:text-prata1 dark:hover:text-blue-500 transition-all duration-300 ease-in-out">
+                            Coral Ranieri
                         </Link>
                     </li>
                     <li>
@@ -162,6 +162,8 @@ const page = usePage();
 
 const dashboardRoute = computed(() => {
     const user = page.props.auth?.user;
+    // Note: Certifique-se de que o backend esteja enviando os papéis do usuário
+    // na prop $page.props.auth.user.roles.
     if (user && user.roles) {
         if (user.roles.some(role => role.name === 'admin')) {
             return '/admin/dashboard';
@@ -170,7 +172,7 @@ const dashboardRoute = computed(() => {
             return '/fotografo/dashboard';
         }
     }
-    return '/dashboard';
+    return '/dashboard'; // Rota padrão se não for admin nem fotografo, ou se os roles não existirem
 });
 
 const toggleDropdown = () => {

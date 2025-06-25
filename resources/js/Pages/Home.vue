@@ -43,7 +43,8 @@
                     <!-- Contêiner para os botões de ação, responsivo (coluna em mobile, linha em desktop). -->
                     <div class="flex flex-col space-y-4 sm:flex-row sm:justify-center sm:space-y-0 sm:space-x-4">
                         <template v-if="$page.props.auth.user">
-                            <!-- Botão para o painel do usuário logado. -->
+                            <!-- Botão para o painel do usuário logado.
+                                 O href="/dashboard" está correto e aponta para a URL literal. -->
                             <Link
                                 href="/dashboard"
                                 class="inline-flex justify-center items-center py-3 px-6 text-xl font-semibold text-center rounded-full bg-laranja2 text-preto1 hover:bg-laranja1-hover focus:ring-4 focus:ring-laranja1-focus transition duration-300 ease-in-out transform hover:scale-105"
@@ -56,7 +57,8 @@
                             </Link>
                         </template>
                         <template v-else>
-                            <!-- Botão de Login para usuários não autenticados. -->
+                            <!-- Botão de Login para usuários não autenticados.
+                                 O href="/login" está correto e aponta para a URL literal. -->
                             <Link
                                 href="/login"
                                 class="inline-flex justify-center items-center py-3 px-6 text-xl font-semibold text-center rounded-full bg-laranja2 text-preto1 hover:bg-laranja1-hover focus:ring-4 focus:ring-laranja1-focus transition duration-300 ease-in-out transform hover:scale-105"
@@ -66,7 +68,8 @@
                                     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 5h12m0 0L9 1m4 4L9 9"/>
                                 </svg>
                             </Link>
-                            <!-- Botão de Registro para novos usuários. -->
+                            <!-- Botão de Registro para novos usuários.
+                                 O href="/register" está correto e aponta para a URL literal. -->
                             <Link
                                 href="/register"
                                 class="inline-flex justify-center items-center py-3 px-6 sm:ms-4 text-xl font-semibold text-center rounded-full bg-roxo2 text-white border border-roxo2 hover:bg-roxo2-hover focus:ring-4 focus:ring-roxo2-focus transition duration-300 ease-in-out transform hover:scale-105"

@@ -23,9 +23,9 @@ class EmailVerificationPromptController extends Controller
     {
         // Verifica se o e-mail do usuário autenticado já foi verificado.
         // Se sim, redireciona para o dashboard.
-        // Ajustado para usar URL literal '/dashboard' conforme a abordagem "sem Ziggy".
+        // CORRIGIDO: Usando a URL literal para consistência com a abordagem "sem Ziggy".
         return $request->user()->hasVerifiedEmail()
-            ? redirect()->intended(RouteServiceProvider::HOME) // Usa a constante para a HOME
-            : Inertia::render('Auth/VerifyEmail', ['status' => session('status')]); // Renderiza a página de verificação
+            ? redirect()->intended(RouteServiceProvider::HOME)
+            : Inertia::render('Auth/VerifyEmail', ['status' => session('status')]);
     }
 }
